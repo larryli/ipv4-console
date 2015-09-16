@@ -1,18 +1,15 @@
 ---
-databases:
-  sqlite:
-#    class: \larryli\ipv4\medoo\Database
-    database_type: sqlite
-    database_file: ~/.ipv4/ipv4.sqlite
-#  mysql:
-#    class: \larryli\ipv4\medoo\Database
-#    database_type: mysql
-#    database_name: ipv4
-#    server: localhost
-#    port: 3306  # optional
-#    username: homestead
-#    password: secret
-#    charset: utf8
+database:
+#  class: \larryli\ipv4\medoo\Database
+  database_type: sqlite
+  database_file: ~/.ipv4/ipv4.sqlite
+#  database_type: mysql
+#  database_name: ipv4
+#  server: localhost
+#  port: 3306  # optional
+#  username: homestead
+#  password: secret
+#  charset: utf8
 
 providers:
   monipdb:
@@ -23,23 +20,19 @@ providers:
     filename: ~/.ipv4/qqwry.dat
   full:
 #    class: \larryli\ipv4\FullQuery
-#    database: sqlite
     providers:
       - monipdb
       - qqwry
   mini:
 #    class: \larryli\ipv4\MiniQuery
-#    database: sqlite
     providers:
       - full
   china:
 #    class: \larryli\ipv4\ChinaQuery
-#    database: sqlite
     providers:
       - full
   world:
 #    class: \larryli\ipv4\WorldQuery
-#    database: sqlite
     providers:
       - full
   freeipip:

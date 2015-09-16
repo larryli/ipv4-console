@@ -46,10 +46,6 @@ class Config
      */
     protected $db;
     /**
-     * @var /larryli/ipv4/Database[]
-     */
-    protected $databases;
-    /**
      * @var array
      */
     public $providers;
@@ -71,6 +67,9 @@ class Config
         $this->initConfig();
     }
 
+    /**
+     *
+     */
     protected function initFilename()
     {
         if (!empty(getenv('HOME'))) {
@@ -95,12 +94,18 @@ class Config
         }
     }
 
+    /**
+     * @param $str
+     */
     protected function failed($str)
     {
         echo $str . PHP_EOL;
         exit(1);
     }
 
+    /**
+     *
+     */
     protected function initConfig()
     {
         $config = [];
@@ -111,43 +116,45 @@ class Config
             $msg = $e->getMessage();
             $this->failed("Unable to parse the YAML string: {$msg}");
         }
-        $this->initDatabases(@$config['databases']);
+        $this->initDatabase(@$config['database']);
         $this->initProviders(@$config['providers']);
     }
 
-    protected function initDatabases($config)
+    /**
+     * @param $config
+     */
+    protected function initDatabase($options)
     {
-        if (!isset($config) || !is_array($config)) {
-            $this->failed("'databases' is not an array or not exists");
+        if (!isset($options) || !is_array($options)) {
+            $this->failed("'database' is not an array or not exists");
         }
-        foreach ($config as $name => $options) {
-            if (!is_array($options)) {
-                $this->failed("Unknown 'databases': \"{$name}\"");
-            }
-            if (isset($options['class'])) {
-                $class = $options['class'];
-                unset($options['class']);
-            } else {
-                $class = "\\larryli\\ipv4\\medoo\\Database";
-                if (!isset($options['database_type'])) {
-                    $this->failed("medoo config is not a array or have not type");
-                }
-            }
-            if (isset($options['database_file'])) {
-                $options['database_file'] = $this->getFilename($options['database_file']);
-            }
-            $this->databases[$name] = new $class($options);
-            if (!isset($this->db)) {
-                $this->db = $this->databases[$name];
+        if (isset($options['class'])) {
+            $class = $options['class'];
+            unset($options['class']);
+        } else {
+            $class = "\\larryli\\ipv4\\medoo\\Database";
+            if (!isset($options['database_type'])) {
+                $this->failed("medoo config is not a array or have not type");
             }
         }
+        if (isset($options['database_file'])) {
+            $options['database_file'] = $this->getFilename($options['database_file']);
+        }
+        $this->db = new $class($options);
     }
 
+    /**
+     * @param $filename
+     * @return mixed
+     */
     protected function getFilename($filename)
     {
         return str_replace('~', $this->home, $filename);
     }
 
+    /**
+     * @param $config
+     */
     protected function initProviders($config)
     {
         if (!isset($config) || !is_array($config)) {
@@ -163,16 +170,7 @@ class Config
                 }
                 if (isset($options['providers']) && is_array($options['providers'])) {
                     $this->providers[$name] = $options['providers'];
-                    if (isset($options['database'])) {
-                        $dbname = $options['database'];
-                        if (isset($this->databases[$dbname])) {
-                            $options = $this->databases[$dbname];
-                        } else {
-                            $this->failed("'providers:{$name}:database' {$dbname} is not exists");
-                        }
-                    } else {
-                        $options = $this->db;
-                    }
+                    $options = $this->db;
                 } else if (isset($options['filename'])) {
                     $options = $this->getFilename($options['filename']);
                 }
