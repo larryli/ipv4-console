@@ -1,0 +1,35 @@
+#!/usr/bin/env php
+<?php
+
+if (PHP_SAPI !== 'cli') {
+    echo 'Warning: ipv4 should be invoked via the CLI version of PHP, not the ' . PHP_SAPI . ' SAPI' . PHP_EOL;
+}
+
+$_ENV['HOME'] = getenv('HOME');
+
+/**
+ * @param $file
+ * @return bool|mixed
+ */
+function includeIfExists($file)
+{
+    return file_exists($file) ? include $file . '' : false; // fix inspect
+}
+
+if ((!$loader = includeIfExists(__DIR__ . '/vendor/autoload.php')) && (!$loader = includeIfExists(__DIR__ . '/../../autoload.php'))) {
+    echo 'You must set up the project dependencies, run the following commands:' . PHP_EOL .
+        'curl -sS https://getcomposer.org/installer | php' . PHP_EOL .
+        'php composer.phar install' . PHP_EOL;
+    exit(1);
+}
+
+use Symfony\Component\Console\Application;
+
+$app = new Application('IP v4 Query', '1.0.0-alpha');
+$app->add(new larryli\ipv4\console\commands\InitCommand);
+$app->add(new larryli\ipv4\console\commands\EditCommand);
+$app->add(new larryli\ipv4\console\commands\QueryCommand);
+$app->add(new larryli\ipv4\console\commands\CleanCommand);
+$app->add(new larryli\ipv4\console\commands\DumpCommand);
+$app->add(new larryli\ipv4\console\commands\BenchmarkCommand);
+$app->run();
