@@ -1,7 +1,7 @@
 {
   "name": "larryli/ipv4-console",
   "description": "IP v4 中国城市地址库控制台命令",
-  "homepage": "https://github.com/larryli/ipv4-bin",
+  "homepage": "https://github.com/larryli/ipv4-console",
   "minimum-stability": "alpha",
   "license": "MIT",
   "authors": [
