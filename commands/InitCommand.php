@@ -9,6 +9,7 @@ namespace larryli\ipv4\console\commands;
 
 use larryli\ipv4\console\Config;
 use larryli\ipv4\DatabaseQuery;
+use larryli\ipv4\Query;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -48,29 +49,30 @@ class InitCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $config = Config::getInstance();
         $force = $input->getOption('force');
         $output->writeln("<info>initialize ip database:</info>");
-        foreach (Config::getInstance()->providers as $name => $provider) {
-            if (empty($provider)) {
-                $this->download($output, $name, $force);
+        foreach ($config->getQueries() as $name => $query) {
+            if (empty($query->getProviders())) {
+                $this->download($output, $query, $name, $force);
             } else {
                 $this->division($output);
-                $this->generate($output, $name, $force, $provider);
+                $this->generate($output, $query, $name, $force);
             }
         }
     }
 
     /**
      * @param OutputInterface $output
-     * @param string $name
+     * @param Query $query
+     * @param string $name,
      * @param bool $force
      * @return void
      * @throws \Exception
      */
-    protected function download(OutputInterface $output, $name, $force)
+    protected function download(OutputInterface $output, Query $query, $name, $force)
     {
-        $query = Config::getInstance()->getQuery($name);
-        $name = $query->name();
+
         if (!$force && $query->exists()) {
             $output->writeln("<comment>use exist {$name} file or api.</comment>", OutputInterface::VERBOSITY_VERBOSE);
         } else {
@@ -136,26 +138,15 @@ class InitCommand extends Command
 
     /**
      * @param OutputInterface $output
+     * @param Query $query
      * @param string $name
      * @param bool $force
-     * @param array $providers
      * @return void
      * @throws \Exception
      */
-    protected function generate(OutputInterface $output, $name, $force, $providers)
+    protected function generate(OutputInterface $output, Query $query, $name, $force)
     {
-        $query = Config::getInstance()->getQuery($name);
-        if (is_array($providers)) {
-            $provider = Config::getInstance()->getQuery($providers[0]);
-            $use = $provider->name();
-            $provider_extra = Config::getInstance()->getQuery(@$providers[1]);
-            if (!empty($provider_extra)) {
-                $use .= ' and ' . $provider_extra->name();
-            }
-        } else {
-            throw new \Exception("Error generate options {$providers}");
-        }
-        $name = $query->name();
+        $use = implode(', ', $query->getProviders());
         if (!$force && $query->exists()) {
             $output->writeln("<comment>use exist {$name} table.</comment>", OutputInterface::VERBOSITY_VERBOSE);
         } else {
@@ -173,7 +164,7 @@ class InitCommand extends Command
                         $this->progress->finish();
                         break;
                 }
-            }, $provider, $provider_extra);
+            });
             $output->writeln('<info> completed!</info>');
         }
     }

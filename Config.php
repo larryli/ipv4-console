@@ -7,6 +7,8 @@
 
 namespace larryli\ipv4\console;
 
+use larryli\ipv4\Object;
+use larryli\ipv4\Query;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 
@@ -14,29 +16,12 @@ use Symfony\Component\Yaml\Parser;
  * Class Config
  * @package larryli\ipv4\console
  */
-class Config
+class Config extends Object
 {
     /**
-     * object names
-     *
-     * @var string[]
+     * @var Config
      */
-    static public $classNames = [
-        'monipdb' => 'MonIPDBQuery',
-        'qqwry' => 'QQWryQuery',
-        'full' => 'FullQuery',
-        'mini' => 'MiniQuery',
-        'china' => 'ChinaQuery',
-        'world' => 'WorldQuery',
-        'freeipip' => 'FreeIPIPQuery',
-        'taobao' => 'TaobaoQuery',
-        'sina' => 'SinaQuery',
-        'baidumap' => 'BaiduMapQuery',
-    ];
-    /**
-     * @var
-     */
-    static $instance;
+    static protected $instance;
     /**
      * @var string
      */
@@ -44,17 +29,13 @@ class Config
     /**
      * @var /larryli/ipv4/Database
      */
-    protected $db;
-    /**
-     * @var array
-     */
-    public $providers;
+    protected $database;
     /**
      * @var string
      */
     protected $home;
     /**
-     * @var /larryli/ipv4/Query[]
+     * @var Query[]
      */
     protected $objects;
 
@@ -121,7 +102,7 @@ class Config
     }
 
     /**
-     * @param $config
+     * @param mixed $options
      */
     protected function initDatabase($options)
     {
@@ -140,7 +121,7 @@ class Config
         if (isset($options['database_file'])) {
             $options['database_file'] = $this->getFilename($options['database_file']);
         }
-        $this->db = new $class($options);
+        $this->database = new $class($options);
     }
 
     /**
@@ -161,29 +142,66 @@ class Config
             $this->failed("'providers' is not an array or not exists");
         }
         foreach ($config as $name => $options) {
-            $this->providers[$name] = null;
-            $class = '';
+            $providers = [];
             if (is_array($options)) {
-                if (isset($options['class'])) {
-                    $class = $options['class'];
-                    unset($options['class']);
-                }
+                $opt = null;
                 if (isset($options['providers']) && is_array($options['providers'])) {
-                    $this->providers[$name] = $options['providers'];
-                    $options = $this->db;
-                } else if (isset($options['filename'])) {
-                    $options = $this->getFilename($options['filename']);
+                    $providers = $options['providers'];
+                    unset($options['providers']);
+                    $opt = $this->database;
                 }
-            }
-            if (empty($class)) {
-                if (isset(self::$classNames[$name])) {
-                    $class = "\\larryli\\ipv4\\" . self::$classNames[$name];
+                if (isset($options['filename'])) {
+                    $opt = $this->getFilename($options['filename']);
+                    unset($options['filename']);
+                }
+                if (isset($options['class']) && !empty($opt)) {
+                    $options['options'] = $opt;
                 } else {
-                    $this->failed("'providers:{$name}' is unknown");
+                    $options = $opt;
                 }
             }
-            $this->objects[$name] = new $class($options);
+            $this->createQuery($name, $options, $providers);
         }
+    }
+
+    /**
+     * @param string $name
+     * @param mixed $options
+     * @param array $providers
+     * @return Query|null
+     * @throws \Exception
+     */
+    public function createQuery($name, $options, array $providers = [])
+    {
+        $query = $this->getQuery($name);
+        if ($query == null) {
+            $query =  Query::create($name, $options);
+            $query->setProviders(array_map(function ($provider) {
+                return $this->getQuery($provider);
+            }, $providers));
+            $this->objects[$name] = $query;
+        }
+        return $query;
+    }
+
+    /**
+     * @param $name
+     * @return Query|null
+     */
+    public function getQuery($name)
+    {
+        if (isset($this->objects[$name])) {
+            return $this->objects[$name];
+        }
+        return null;
+    }
+
+    /**
+     * @return \larryli\ipv4\Query[]
+     */
+    public function getQueries()
+    {
+        return $this->objects;
     }
 
     /**
@@ -195,17 +213,5 @@ class Config
             self::$instance = new self();
         }
         return self::$instance;
-    }
-
-    /**
-     * @param string $name
-     * @return null|\larryli\ipv4\Query
-     */
-    public function getQuery($name)
-    {
-        if (array_key_exists($name, $this->objects)) {
-            return $this->objects[$name];
-        }
-        return null;
     }
 }

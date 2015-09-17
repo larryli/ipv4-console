@@ -8,9 +8,12 @@
 namespace larryli\ipv4\console\commands;
 
 use larryli\ipv4\console\Config;
+use larryli\ipv4\DatabaseQuery;
+use larryli\ipv4\FileQuery;
+use larryli\ipv4\Query;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -48,6 +51,7 @@ class BenchmarkCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $config = Config::getInstance();
         $times = $input->getOption('times');
         if ($times < 1) {
             $output->writeln("<error>benchmark {$times} is too small</error>");
@@ -57,21 +61,21 @@ class BenchmarkCommand extends Command
         $output->writeln("<info>benchmark {$type}:</info>\t<comment>{$times} times</comment>");
         switch ($type) {
             case 'all':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    $this->benchmark($output, $name, $times);
+                foreach ($config->getQueries() as $name => $query) {
+                    $this->benchmark($output, $query, $name, $times);
                 }
                 break;
             case 'file':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    if (empty($provider)) {
-                        $this->benchmark($output, $name, $times);
+                foreach ($config->getQueries() as $name => $query) {
+                    if (FileQuery::is_a($query)) {
+                        $this->benchmark($output, $query, $name, $times);
                     }
                 }
                 break;
             case 'database':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    if (!empty($provider)) {
-                        $this->benchmark($output, $name, $times);
+                foreach ($config->getQueries() as $name => $query) {
+                    if (DatabaseQuery::is_a($query)) {
+                        $this->benchmark($output, $query, $name, $times);
                     }
                 }
                 break;
@@ -83,18 +87,21 @@ class BenchmarkCommand extends Command
 
     /**
      * @param OutputInterface $output
+     * @param Query $query
      * @param string $name
      * @param integer $times
      * @throws \Exception
      */
-    private function benchmark(OutputInterface $output, $name, $times)
+    private function benchmark(OutputInterface $output, Query $query, $name, $times)
     {
-        $query = Config::getInstance()->getQuery($name);
+        $step = intval(4000000000 / $times);
+        if ($step < 1) {
+            $step = 1;
+        }
         if (count($query) > 0) {
             $output->write("\t<info>benchmark {$name}:</info> \t");
             $start = microtime(true);
-            for ($i = 0; $i < $times; $i++) {
-                $ip = mt_rand(0, 4294967295);
+            for ($ip = 0, $i = 0; $i < $times; $ip += $step, $i++) {
                 $query->find($ip);
             }
             $time = microtime(true) - $start;

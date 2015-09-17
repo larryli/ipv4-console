@@ -9,6 +9,8 @@ namespace larryli\ipv4\console\commands;
 
 use larryli\ipv4\console\Config;
 use larryli\ipv4\DatabaseQuery;
+use larryli\ipv4\FileQuery;
+use larryli\ipv4\Query;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -43,30 +45,31 @@ class CleanCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $config = Config::getInstance();
         $cleanDivision = false;
         $type = $input->getArgument('type');
         $output->writeln("<info>clean {$type}:</info>");
         switch ($type) {
             case 'all':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    if (!empty($provider)) {
+                foreach ($config->getQueries() as $name => $query) {
+                    if (DatabaseQuery::is_a($query)) {
                         $cleanDivision = true;
                     }
-                    $this->clean($output, $name);
+                    $this->clean($output, $query, $name);
                 }
                 break;
             case 'file':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    if (empty($provider)) {
-                        $this->clean($output, $name);
+                foreach ($config->getQueries() as $name => $query) {
+                    if (FileQuery::is_a($query)) {
+                        $this->clean($output, $query, $name);
                     }
                 }
                 break;
             case 'database':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    if (!empty($provider)) {
+                foreach ($config->getQueries() as $name => $query) {
+                    if (DatabaseQuery::is_a($query)) {
                         $cleanDivision = true;
-                        $this->clean($output, $name);
+                        $this->clean($output, $query, $name);
                     }
                 }
                 break;
@@ -81,13 +84,13 @@ class CleanCommand extends Command
 
     /**
      * @param OutputInterface $output
+     * @param Query $query
      * @param string $name
      * @throws \Exception
      */
-    private function clean(OutputInterface $output, $name)
+    private function clean(OutputInterface $output, Query $query, $name)
     {
         $output->write("<info>clean {$name}:</info>");
-        $query = Config::getInstance()->getQuery($name);
         $query->clean();
         $output->writeln('<info> completed!</info>');
     }

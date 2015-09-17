@@ -8,6 +8,7 @@
 namespace larryli\ipv4\console\commands;
 
 use larryli\ipv4\console\Config;
+use larryli\ipv4\Query;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -39,23 +40,24 @@ class QueryCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $config = Config::getInstance();
         $ip = $input->getArgument('ip');
         $output->writeln("<info>query \"{$ip}\":</info>");
         $ip = ip2long($ip);
-        foreach (Config::getInstance()->providers as $name => $provider) {
-            $this->query($output, $name, $ip);
+        foreach ($config->getQueries() as $name => $query) {
+            $this->query($output, $query, $name, $ip);
         }
     }
 
     /**
      * @param OutputInterface $output
+     * @param Query $query
      * @param string $name
      * @param integer $ip
      * @throws \Exception
      */
-    private function query(OutputInterface $output, $name, $ip)
+    private function query(OutputInterface $output, Query $query, $name, $ip)
     {
-        $query = Config::getInstance()->getQuery($name);
         $address = $query->find($ip);
         $output->writeln("\t<comment>{$name}:</comment> {$address}");
     }

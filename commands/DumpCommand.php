@@ -8,6 +8,7 @@
 namespace larryli\ipv4\console\commands;
 
 use larryli\ipv4\console\Config;
+use larryli\ipv4\FileQuery;
 use larryli\ipv4\Query;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -49,29 +50,30 @@ class DumpCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $config = Config::getInstance();
         $type = $input->getArgument('type');
         $output->writeln("<info>dump {$type}:</info>");
         switch ($type) {
             case 'default':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    $this->dumpDefault($output, $name, 'dump_' . $name . '.json');
+                foreach ($config->getQueries() as $name => $query) {
+                    $this->dumpDefault($output, $query, $name);
                 }
                 break;
             case 'division':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    $this->dumpDivision($output, $name, 'dump_' . $name . '_division.json');
+                foreach ($config->getQueries() as $name => $query) {
+                    $this->dumpDivision($output, $query, $name);
                 }
                 break;
             case 'division_id':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    if (empty($provider)) {
-                        $this->dumpDivisionWithId($output, $name, 'dump_' . $name . '_division_id.json');
+                foreach ($config->getQueries() as $name => $query) {
+                    if (FileQuery::is_a($query)) {
+                        $this->dumpDivisionWithId($output, $query, $name);
                     }
                 }
                 break;
             case 'count':
-                foreach (Config::getInstance()->providers as $name => $provider) {
-                    $this->dumpCount($output, $name, 'dump_' . $name . '_count.json');
+                foreach ($config->getQueries() as $name => $query) {
+                    $this->dumpCount($output, $query, $name);
                 }
                 break;
             default:
@@ -82,13 +84,13 @@ class DumpCommand extends Command
 
     /**
      * @param OutputInterface $output
-     * @param $name
-     * @param $filename
+     * @param Query $query
+     * @param string $name
      * @throws \Exception
      */
-    private function dumpDefault(OutputInterface $output, $name, $filename)
+    private function dumpDefault(OutputInterface $output, Query $query, $name)
     {
-        $query = Config::getInstance()->getQuery($name);
+        $filename = 'dump_' . $name . '.json';
         $result = $this->dump($output, $query, $filename);
         if (count($result) > 0) {
             $this->write($output, $filename, $result);
@@ -141,13 +143,13 @@ class DumpCommand extends Command
 
     /**
      * @param OutputInterface $output
+     * @param Query $query
      * @param string $name
-     * @param string $filename
      * @throws \Exception
      */
-    private function dumpDivision(OutputInterface $output, $name, $filename)
+    private function dumpDivision(OutputInterface $output, Query $query, $name)
     {
-        $query = Config::getInstance()->getQuery($name);
+        $filename = 'dump_' . $name . '_division.json';
         $result = $this->divisions($output, $query, $filename, 'dump_' . $name . '.json');
         if (count($result) > 0) {
             $result = array_unique(array_values($result));
@@ -190,18 +192,18 @@ class DumpCommand extends Command
 
     /**
      * @param OutputInterface $output
+     * @param Query $query
      * @param string $name
-     * @param string $filename
      * @throws \Exception
      */
-    private function dumpDivisionWithId(OutputInterface $output, $name, $filename)
+    private function dumpDivisionWithId(OutputInterface $output, Query $query, $name)
     {
-        $query = Config::getInstance()->getQuery($name);
+        $filename = 'dump_' . $name . '_division_id.json';
         $json_filename = 'dump_' . $name . '_division.json';
         if (file_exists($json_filename)) {
             $result = $this->read($output, $json_filename);
         } else {
-            $result = $this->divisions($output, $query, $filename, 'dump_' . $name . '.json');
+            $result = $this->divisions($output, $query, $filename, 'dump_' . $query . '.json');
         }
         if (count($result) > 0) {
             $result = $this->divisionsWithId($output, $query, $result);
@@ -236,10 +238,15 @@ class DumpCommand extends Command
         return $result;
     }
 
-    private function dumpCount(OutputInterface $output, $name, $filename)
+    /**
+     * @param OutputInterface $output
+     * @param Query $query
+     * @param $name
+     */
+    private function dumpCount(OutputInterface $output, Query $query, $name)
     {
+        $filename = 'dump_' . $name . '_count.json';
         $result = [];
-        $query = Config::getInstance()->getQuery($name);
         if (count($query) > 0) {
             $output->writeln("<info>dump {$filename}:</info>");
             $this->progress = new ProgressBar($output, count($query));
