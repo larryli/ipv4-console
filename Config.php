@@ -175,7 +175,7 @@ class Config extends Object
     {
         $query = $this->getQuery($name);
         if ($query == null) {
-            $query =  Query::create($name, $options);
+            $query = Query::create($name, $options);
             $query->setProviders(array_map(function ($provider) {
                 return $this->getQuery($provider);
             }, $providers));

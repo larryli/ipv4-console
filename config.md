@@ -37,7 +37,7 @@ database:
 ```yaml
 providers:
   monipdb:
-    class: \larryli\ipv4\MonIPDBQuery
+    class: \larryli\ipv4\MonipdbQuery
     filename: ~/.ipv4/17monipdb.dat
 ```
 
