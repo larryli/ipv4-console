@@ -2,7 +2,8 @@
   "name": "larryli/ipv4-console",
   "description": "IP v4 中国城市地址库控制台命令",
   "homepage": "https://github.com/larryli/ipv4-console",
-  "minimum-stability": "beta",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
   "license": "MIT",
   "authors": [
     {
@@ -16,7 +17,7 @@
     "symfony/console": "~2.5",
     "symfony/process": "~2.0",
     "symfony/yaml": "~2.0",
-    "larryli/ipv4": "1.0.0-beta2"
+    "larryli/ipv4": "dev-feature/export as 1.0.x-dev"
   },
   "require-dev": {
     "phpunit/phpunit": "~4.5"
