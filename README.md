@@ -3,8 +3,10 @@
 ## 通过 composer 安装
 
 ```shell
-composer require larryli/ipv4-console
+composer global require "larryli/ipv4-console=~1.0"
 ```
+
+然后将 ```$HOME/.composer/vendor/bin``` 加入 ```$PATH``` 环境变量
 
 ## 初始化
 
@@ -44,7 +46,7 @@ ipv4 --type qqwry monipdb 17monipdb.qqwry.dat
 
 对于，```monipdb``` 可选项有 ```--ecdz=1``` 设置导出的地址字符串中没有制表符分隔。
 
-对于，```qqwry``` 可选项有 ```--remove-ip-in-recode=1``` 去掉冗余的纪录区 IP 数据（对文件兼容性有影响，但可以大幅减少文件大小）。
+对于，```qqwry``` 可选项有 ```--remove-ip-in-recode=1``` 去掉冗余的记录区 IP 数据（对文件兼容性有影响，但可以大幅减少文件大小）。
 
 ## 杂项
 
@@ -56,7 +58,7 @@ ipv4 clean database   # 清除生成的数据库数据
 ipv4 dump             # 导出原始数据
 ipv4 dump division    # 导出排序好的全部地址列表
 ipv4 dump division_id # 导出排序好的全部地址和猜测行政区域代码列表
-ipv4 dump count       # 导出纪录统计数据
+ipv4 dump count       # 导出记录统计数据
 ```
 
 注意：```dump``` 命令会耗费大量内存，请配置 PHP ```memory_limit``` 至少为 ```128M``` 或更多。
