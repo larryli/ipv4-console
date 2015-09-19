@@ -128,7 +128,7 @@ class Config extends Object
      * @param $filename
      * @return mixed
      */
-    protected function getFilename($filename)
+    public function getFilename($filename)
     {
         return str_replace('~', $this->home, $filename);
     }

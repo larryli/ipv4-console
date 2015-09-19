@@ -26,10 +26,11 @@ if ((!$loader = includeIfExists(__DIR__ . '/vendor/autoload.php')) && (!$loader 
 use Symfony\Component\Console\Application;
 
 $app = new Application('IP v4 Query', '1.0.0');
-$app->add(new larryli\ipv4\console\commands\InitCommand);
-$app->add(new larryli\ipv4\console\commands\EditCommand);
-$app->add(new larryli\ipv4\console\commands\QueryCommand);
-$app->add(new larryli\ipv4\console\commands\CleanCommand);
-$app->add(new larryli\ipv4\console\commands\DumpCommand);
-$app->add(new larryli\ipv4\console\commands\BenchmarkCommand);
+$app->add(new larryli\ipv4\console\commands\InitCommand());
+$app->add(new larryli\ipv4\console\commands\EditCommand());
+$app->add(new larryli\ipv4\console\commands\QueryCommand());
+$app->add(new larryli\ipv4\console\commands\CleanCommand());
+$app->add(new larryli\ipv4\console\commands\DumpCommand());
+$app->add(new larryli\ipv4\console\commands\BenchmarkCommand());
+$app->add(new larryli\ipv4\console\commands\ExportCommand());
 $app->run();
