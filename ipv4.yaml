@@ -1,0 +1,45 @@
+---
+database:
+#  class: \larryli\ipv4\medoo\Database
+  database_type: sqlite
+  database_file: ~/.ipv4/ipv4.sqlite
+#  database_type: mysql
+#  database_name: ipv4
+#  server: localhost
+#  port: 3306  # optional
+#  username: homestead
+#  password: secret
+#  charset: utf8
+
+providers:
+  monipdb:
+#    class: \larryli\ipv4\MonipdbQuery
+    filename: ~/.ipv4/17monipdb.dat
+  qqwry:
+#    class: \larryli\ipv4\QqwryQuery
+    filename: ~/.ipv4/qqwry.dat
+  full:
+#    class: \larryli\ipv4\FullQuery
+    providers:
+      - monipdb
+      - qqwry
+  mini:
+#    class: \larryli\ipv4\MiniQuery
+    providers:
+      - full
+  china:
+#    class: \larryli\ipv4\ChinaQuery
+    providers:
+      - full
+  world:
+#    class: \larryli\ipv4\WorldQuery
+    providers:
+      - full
+  freeipip:
+#    class: \larryli\ipv4\FreeipipQuery
+#  taobao:
+#    class: \larryli\ipv4\TaobaoQuery
+#  sina:
+#    class: \larryli\ipv4\SinaQuery
+#  baidumap:
+#    class: \larryli\ipv4\BaidumapQuery

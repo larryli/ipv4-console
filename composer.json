@@ -1,0 +1,30 @@
+{
+  "name": "larryli/ipv4-console",
+  "description": "IP v4 中国城市地址库控制台命令",
+  "homepage": "https://github.com/larryli/ipv4-console",
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Larry Li",
+      "email": "larryli@qq.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.4",
+    "larryli/ipv4-medoo": "~1.0",
+    "symfony/console": "~2.5",
+    "symfony/process": "~2.0",
+    "symfony/yaml": "~2.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "larryli\\ipv4\\console\\": ""
+    }
+  },
+  "bin": ["ipv4"]
+}
