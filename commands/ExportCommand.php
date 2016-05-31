@@ -62,6 +62,12 @@ class ExportCommand extends Command
                 'monipdb or qqwry',
                 'monipdb'
             )
+            ->addOption(
+                'no-progress',
+                '',
+                InputOption::VALUE_NONE,
+                'Do not show progress bar.'
+            )
             ->addArgument(
                 'query',
                 InputArgument::REQUIRED,
@@ -82,6 +88,7 @@ class ExportCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $config = Config::getInstance();
+        $noProgress = $input->getOption('no-progress');
         $query = $input->getArgument('query');
         $provider = $config->getQuery($query);
         if (empty($provider)) {
@@ -111,20 +118,24 @@ class ExportCommand extends Command
         }
 
         $output->writeln("<info>export \"{$query}\" to \"{$type}\" filename \"{$filename}\":</info>");
-        $export->init(function ($code, $n) use ($output) {
-            switch ($code) {
-                case 0:
-                    $this->progress = new ProgressBar($output, $n);
-                    $this->progress->start();
-                    break;
-                case 1:
-                    $this->progress->setProgress($n);
-                    break;
-                case 2:
-                    $this->progress->finish();
-                    break;
-            }
-        });
+        if (!$noProgress) {
+            $export->init(function ($code, $n) use ($output) {
+                switch ($code) {
+                    case 0:
+                        $this->progress = new ProgressBar($output, $n);
+                        $this->progress->start();
+                        break;
+                    case 1:
+                        $this->progress->setProgress($n);
+                        break;
+                    case 2:
+                        $this->progress->finish();
+                        break;
+                }
+            });
+        } else {
+            $export->init();
+        }
         $output->writeln('<info> completed!</info>');
         return 0;
     }
