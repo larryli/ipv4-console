@@ -14,6 +14,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -35,6 +36,12 @@ class DumpCommand extends Command
         $this
             ->setName('dump')
             ->setDescription('dump ip database')
+            ->addOption(
+                'no-progress',
+                '',
+                InputOption::VALUE_NONE,
+                'Do not show progress bar.'
+            )
             ->addArgument(
                 'type',
                 InputArgument::OPTIONAL,
@@ -51,29 +58,30 @@ class DumpCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $config = Config::getInstance();
+        $noProgress = $input->getOption('no-progress');
         $type = $input->getArgument('type');
         $output->writeln("<info>dump {$type}:</info>");
         switch ($type) {
             case 'default':
                 foreach ($config->getQueries() as $name => $query) {
-                    $this->dumpDefault($output, $query, $name);
+                    $this->dumpDefault($output, $query, $name, $noProgress);
                 }
                 break;
             case 'division':
                 foreach ($config->getQueries() as $name => $query) {
-                    $this->dumpDivision($output, $query, $name);
+                    $this->dumpDivision($output, $query, $name, $noProgress);
                 }
                 break;
             case 'division_id':
                 foreach ($config->getQueries() as $name => $query) {
                     if (FileQuery::is_a($query)) {
-                        $this->dumpDivisionWithId($output, $query, $name);
+                        $this->dumpDivisionWithId($output, $query, $name, $noProgress);
                     }
                 }
                 break;
             case 'count':
                 foreach ($config->getQueries() as $name => $query) {
-                    $this->dumpCount($output, $query, $name);
+                    $this->dumpCount($output, $query, $name, $noProgress);
                 }
                 break;
             default:
@@ -86,12 +94,13 @@ class DumpCommand extends Command
      * @param OutputInterface $output
      * @param Query $query
      * @param string $name
+     * @param bool $noProgress
      * @throws \Exception
      */
-    private function dumpDefault(OutputInterface $output, Query $query, $name)
+    private function dumpDefault(OutputInterface $output, Query $query, $name, $noProgress)
     {
         $filename = 'dump_' . $name . '.json';
-        $result = $this->dump($output, $query, $filename);
+        $result = $this->dump($output, $query, $filename, $noProgress);
         if (count($result) > 0) {
             $this->write($output, $filename, $result);
         }
@@ -101,15 +110,18 @@ class DumpCommand extends Command
      * @param OutputInterface $output
      * @param Query $query
      * @param $filename
+     * @param bool $noProgress
      * @return array
      */
-    private function dump(OutputInterface $output, Query $query, $filename)
+    private function dump(OutputInterface $output, Query $query, $filename, $noProgress)
     {
         $result = [];
         if (count($query) > 0) {
             $output->writeln("<info>dump {$filename}:</info>");
-            $this->progress = new ProgressBar($output, count($query));
-            $this->progress->start();
+            if (!$noProgress) {
+                $this->progress = new ProgressBar($output, count($query));
+                $this->progress->start();
+            }
             $n = 0;
             $time = Query::time();
             foreach ($query as $ip => $division) {
@@ -118,12 +130,14 @@ class DumpCommand extends Command
                 }
                 $result[long2ip($ip)] = $division;
                 $n++;
-                if ($time < Query::time()) {
+                if (!$noProgress && $time < Query::time()) {
                     $this->progress->setProgress($n);
                     $time = Query::time();
                 }
             }
-            $this->progress->finish();
+            if (!$noProgress) {
+                $this->progress->finish();
+            }
             $output->writeln('<info> completed!</info>');
         }
         return $result;
@@ -145,12 +159,13 @@ class DumpCommand extends Command
      * @param OutputInterface $output
      * @param Query $query
      * @param string $name
+     * @param bool $noProgress
      * @throws \Exception
      */
-    private function dumpDivision(OutputInterface $output, Query $query, $name)
+    private function dumpDivision(OutputInterface $output, Query $query, $name, $noProgress)
     {
         $filename = 'dump_' . $name . '_division.json';
-        $result = $this->divisions($output, $query, $filename, 'dump_' . $name . '.json');
+        $result = $this->divisions($output, $query, $filename, 'dump_' . $name . '.json', $noProgress);
         if (count($result) > 0) {
             $result = array_unique(array_values($result));
             sort($result);
@@ -163,14 +178,15 @@ class DumpCommand extends Command
      * @param Query $query
      * @param $filename
      * @param $json_filename
+     * @param bool $noProgress
      * @return array|\string[]
      */
-    private function divisions(OutputInterface $output, Query $query, $filename, $json_filename)
+    private function divisions(OutputInterface $output, Query $query, $filename, $json_filename, $noProgress)
     {
         if (file_exists($json_filename)) {
             $result = $this->read($output, $json_filename);
         } else {
-            $result = $this->dump($output, $query, $filename);
+            $result = $this->dump($output, $query, $filename, $noProgress);
         }
         $result = array_unique(array_values($result));
         sort($result);
@@ -194,19 +210,20 @@ class DumpCommand extends Command
      * @param OutputInterface $output
      * @param Query $query
      * @param string $name
+     * @param bool $noProgress
      * @throws \Exception
      */
-    private function dumpDivisionWithId(OutputInterface $output, Query $query, $name)
+    private function dumpDivisionWithId(OutputInterface $output, Query $query, $name, $noProgress)
     {
         $filename = 'dump_' . $name . '_division_id.json';
         $json_filename = 'dump_' . $name . '_division.json';
         if (file_exists($json_filename)) {
             $result = $this->read($output, $json_filename);
         } else {
-            $result = $this->divisions($output, $query, $filename, 'dump_' . $query . '.json');
+            $result = $this->divisions($output, $query, $filename, 'dump_' . $query . '.json', $noProgress);
         }
         if (count($result) > 0) {
-            $result = $this->divisionsWithId($output, $query, $result);
+            $result = $this->divisionsWithId($output, $query, $result, $noProgress);
             $this->write($output, $filename, $result);
         }
     }
@@ -215,25 +232,30 @@ class DumpCommand extends Command
      * @param OutputInterface $output
      * @param Query $query
      * @param string[] $divisions
+     * @param bool $noProgress
      * @return array
      */
-    private function divisionsWithId(OutputInterface $output, Query $query, $divisions)
+    private function divisionsWithId(OutputInterface $output, Query $query, $divisions, $noProgress)
     {
         $result = [];
         $output->writeln("<info>translate division to division_id:</info>");
-        $this->progress = new ProgressBar($output, count($divisions));
-        $this->progress->start();
+        if (!$noProgress) {
+            $this->progress = new ProgressBar($output, count($divisions));
+            $this->progress->start();
+        }
         $n = 0;
         $time = Query::time();
         foreach ($divisions as $division) {
             $result[$division] = $query->idByDivision($division);
             $n++;
-            if ($time < Query::time()) {
+            if (!$noProgress && $time < Query::time()) {
                 $this->progress->setProgress($n);
                 $time = Query::time();
             }
         }
-        $this->progress->finish();
+        if (!$noProgress) {
+            $this->progress->finish();
+        }
         $output->writeln('<info> completed!</info>');
         return $result;
     }
@@ -242,15 +264,18 @@ class DumpCommand extends Command
      * @param OutputInterface $output
      * @param Query $query
      * @param $name
+     * @param bool $noProgress
      */
-    private function dumpCount(OutputInterface $output, Query $query, $name)
+    private function dumpCount(OutputInterface $output, Query $query, $name, $noProgress)
     {
         $filename = 'dump_' . $name . '_count.json';
         $result = [];
         if (count($query) > 0) {
             $output->writeln("<info>dump {$filename}:</info>");
-            $this->progress = new ProgressBar($output, count($query));
-            $this->progress->start();
+            if (!$noProgress) {
+                $this->progress = new ProgressBar($output, count($query));
+                $this->progress->start();
+            }
             $n = 0;
             $time = Query::time();
             $last = -1;
@@ -284,12 +309,14 @@ class DumpCommand extends Command
                     }
                 }
                 $n++;
-                if ($time < Query::time()) {
+                if (!$noProgress && $time < Query::time()) {
                     $this->progress->setProgress($n);
                     $time = Query::time();
                 }
             }
-            $this->progress->finish();
+            if (!$noProgress) {
+                $this->progress->finish();
+            }
             $output->writeln('<info> completed!</info>');
         }
         ksort($result);
