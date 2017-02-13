@@ -32,8 +32,8 @@ ipv4 edit
 
 ## 导出
 
-```shell
-ipv4 --type qqwry monipdb 17monipdb.qqwry.dat
+```
+ipv4 export --type qqwry monipdb 17monipdb.qqwry.dat
 ```
 
 格式为：```--type``` 导出文件类型，然后是要导出的查询库和保存的文件。
